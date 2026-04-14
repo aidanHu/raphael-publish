@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { PenLine, Eye } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
-import { md, preprocessMarkdown, applyTheme } from './lib/markdown';
+import { md, preprocessMarkdown, normalizeHtmlPunctuation, applyTheme } from './lib/markdown';
 import { markElementIndexes } from './lib/markdownIndexer';
 import { makeWeChatCompatible, cleanInternalAttributes } from './lib/wechatCompat';
 import { THEMES } from './lib/themes';
@@ -24,6 +24,7 @@ export default function App() {
     const [previewDevice, setPreviewDevice] = useState<'mobile' | 'tablet' | 'pc'>('pc');
     const [activePanel, setActivePanel] = useState<'editor' | 'preview'>('editor');
     const [scrollSyncEnabled, setScrollSyncEnabled] = useState(true);
+    const [convertPunctuation, setConvertPunctuation] = useState(false);
     const previewRef = useRef<HTMLDivElement>(null);
     const editorScrollRef = useRef<HTMLTextAreaElement>(null);
     const previewOuterScrollRef = useRef<HTMLDivElement>(null);
@@ -47,14 +48,15 @@ export default function App() {
     useEffect(() => {
         // Core rendering: markdown → HTML → styled HTML
         const rawHtml = md.render(preprocessMarkdown(markdownInput));
-        const styledHtml = applyTheme(rawHtml, activeTheme);
+        const normalizedHtml = convertPunctuation ? normalizeHtmlPunctuation(rawHtml) : rawHtml;
+        const styledHtml = applyTheme(normalizedHtml, activeTheme);
 
         // Enhancement layer: add index markers for click-to-locate
         // This is decoupled from core rendering logic
         const indexedHtml = markElementIndexes(styledHtml);
 
         setRenderedHtml(indexedHtml);
-    }, [markdownInput, activeTheme]);
+    }, [markdownInput, activeTheme, convertPunctuation]);
 
     useEffect(() => {
         if (!scrollSyncEnabled) {
@@ -289,6 +291,8 @@ export default function App() {
                     isCopying={isCopying}
                     scrollSyncEnabled={scrollSyncEnabled}
                     onToggleScrollSync={() => setScrollSyncEnabled((prev) => !prev)}
+                    convertPunctuation={convertPunctuation}
+                    onToggleConvertPunctuation={() => setConvertPunctuation((prev) => !prev)}
                 />
             </div>
 
@@ -307,6 +311,8 @@ export default function App() {
                     isCopying={isCopying}
                     scrollSyncEnabled={scrollSyncEnabled}
                     onToggleScrollSync={() => setScrollSyncEnabled((prev) => !prev)}
+                    convertPunctuation={convertPunctuation}
+                    onToggleConvertPunctuation={() => setConvertPunctuation((prev) => !prev)}
                 />
             </div>
 

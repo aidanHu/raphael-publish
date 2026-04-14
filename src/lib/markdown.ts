@@ -25,6 +25,122 @@ export const md = new MarkdownIt({
     }
 });
 
+const PUNCTUATION_MAP: Record<string, string> = {
+    ',': '，',
+    '.': '。',
+    ':': '：',
+    ';': '；',
+    '?': '？',
+    '!': '！',
+    '(': '（',
+    ')': '）',
+    '/': '／'
+};
+
+function isAsciiLetterOrDigit(char: string) {
+    return /[A-Za-z0-9]/.test(char);
+}
+
+function isDigit(char: string) {
+    return /\d/.test(char);
+}
+
+function isListMarkerPeriod(text: string, index: number) {
+    if (text[index] !== '.' || !isDigit(text[index - 1] || '')) {
+        return false;
+    }
+
+    let start = index - 1;
+    while (start >= 0 && isDigit(text[start])) {
+        start -= 1;
+    }
+
+    const before = text[start] || '';
+    const after = text[index + 1] || '';
+
+    return (!before || /\s/.test(before) || /[([{\n]/.test(before)) && (!after || /\s/.test(after) || /[\u4e00-\u9fff]/.test(after));
+}
+
+function shouldSkipPunctuationConversion(text: string, index: number, char: string) {
+    const prev = text[index - 1] || '';
+    const next = text[index + 1] || '';
+
+    if ((char === '.' || char === ',' || char === ':') && isDigit(prev) && isDigit(next)) {
+        return true;
+    }
+
+    if (char === '.' && isListMarkerPeriod(text, index)) {
+        return true;
+    }
+
+    if (char === "'" && isAsciiLetterOrDigit(prev) && isAsciiLetterOrDigit(next)) {
+        return true;
+    }
+
+    return false;
+}
+
+export function convertEnglishPunctuationToChinese(text: string) {
+    let normalized = text.replace(/\.{3,}/g, '……');
+    let result = '';
+    let doubleQuoteOpen = false;
+    let singleQuoteOpen = false;
+
+    for (let index = 0; index < normalized.length; index += 1) {
+        const char = normalized[index];
+
+        if (char === '"' || char === "'") {
+            const prev = normalized[index - 1] || '';
+            const next = normalized[index + 1] || '';
+
+            if (char === "'" && isAsciiLetterOrDigit(prev) && isAsciiLetterOrDigit(next)) {
+                result += "'";
+                continue;
+            }
+
+            if (char === '"') {
+                result += doubleQuoteOpen ? '”' : '“';
+                doubleQuoteOpen = !doubleQuoteOpen;
+                continue;
+            }
+
+            result += singleQuoteOpen ? '’' : '‘';
+            singleQuoteOpen = !singleQuoteOpen;
+            continue;
+        }
+
+        const mapped = PUNCTUATION_MAP[char];
+
+        if (!mapped || shouldSkipPunctuationConversion(normalized, index, char)) {
+            result += char;
+            continue;
+        }
+
+        result += mapped;
+    }
+
+    return result;
+}
+
+export function normalizeHtmlPunctuation(html: string) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+
+    let currentNode = walker.nextNode();
+    while (currentNode) {
+        const shouldSkip = Boolean(currentNode.parentElement?.closest('a, code, pre, script, style, textarea'));
+
+        if (!shouldSkip && currentNode.textContent) {
+            currentNode.textContent = convertEnglishPunctuationToChinese(currentNode.textContent);
+        }
+
+        currentNode = walker.nextNode();
+    }
+
+    return doc.body.innerHTML;
+}
+
 // Avoid bold fragmentation when pasting from certain apps
 export function preprocessMarkdown(content: string) {
     content = content.replace(/^[ ]{0,3}(\*[ ]*\*[ ]*\*[\* ]*)[ \t]*$/gm, '***');

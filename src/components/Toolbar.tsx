@@ -11,9 +11,23 @@ interface ToolbarProps {
     isCopying: boolean;
     scrollSyncEnabled: boolean;
     onToggleScrollSync: () => void;
+    convertPunctuation: boolean;
+    onToggleConvertPunctuation: () => void;
 }
 
-export default function Toolbar({ previewDevice, onDeviceChange, onExportPdf, onExportHtml, onCopy, copied, isCopying, scrollSyncEnabled, onToggleScrollSync }: ToolbarProps) {
+export default function Toolbar({
+    previewDevice,
+    onDeviceChange,
+    onExportPdf,
+    onExportHtml,
+    onCopy,
+    copied,
+    isCopying,
+    scrollSyncEnabled,
+    onToggleScrollSync,
+    convertPunctuation,
+    onToggleConvertPunctuation
+}: ToolbarProps) {
     return (
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 max-w-[1024px]">
             <div className="hidden md:flex bg-[#00000008] dark:bg-[#ffffff10] p-1 rounded-full backdrop-blur-md">
@@ -44,6 +58,19 @@ export default function Toolbar({ previewDevice, onDeviceChange, onExportPdf, on
             </div>
 
             <div className="flex items-center gap-4">
+                <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.96 }}
+                    data-testid="punctuation-toggle"
+                    onClick={onToggleConvertPunctuation}
+                    className={`apple-export-btn !bg-[#00000008] dark:!bg-[#ffffff10] border-transparent ${convertPunctuation ? 'text-[#0066cc] dark:text-[#0a84ff]' : 'text-[#86868b] dark:text-[#a1a1a6]'}`}
+                    title={convertPunctuation ? '关闭英文符号转中文' : '开启英文符号转中文'}
+                >
+                    <span className="font-mono text-[12px] leading-none">A→中</span>
+                    <span className="hidden sm:inline">{convertPunctuation ? '符号转中文开' : '符号转中文关'}</span>
+                    <span className="sm:hidden">{convertPunctuation ? '符号开' : '符号关'}</span>
+                </motion.button>
+
                 <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.96 }}

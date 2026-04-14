@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyTheme, md, preprocessMarkdown } from './markdown';
+import { applyTheme, convertEnglishPunctuationToChinese, md, normalizeHtmlPunctuation, preprocessMarkdown } from './markdown';
 
 function renderMarkdown(markdown: string) {
     return md.render(preprocessMarkdown(markdown));
@@ -26,6 +26,32 @@ describe('preprocessMarkdown', () => {
         const doc = new DOMParser().parseFromString(html, 'text/html');
 
         expect(doc.querySelectorAll('strong')).toHaveLength(2);
+    });
+});
+
+describe('convertEnglishPunctuationToChinese', () => {
+    it('converts only common prose punctuation', () => {
+        expect(convertEnglishPunctuationToChinese('Hello, world! "test" (A/B)')).toBe('Hello， world！ “test” （A／B）');
+    });
+
+    it('renders paired double quotes correctly in chinese text', () => {
+        expect(convertEnglishPunctuationToChinese('"现象层",有点问题')).toBe('“现象层”，有点问题');
+    });
+
+    it('preserves decimal points, list markers and inline apostrophes', () => {
+        expect(convertEnglishPunctuationToChinese("1. First item, don't panic. Price is 3.14.")).toBe("1. First item， don't panic。 Price is 3.14。");
+    });
+});
+
+describe('normalizeHtmlPunctuation', () => {
+    it('converts punctuation in text nodes only', () => {
+        const html = '<p>1. 你好, "世界" (A/B).</p><pre><code>const a = 1 + 2;</code></pre><p><a href="https://example.com?a=1&b=2">https://example.com?a=1&b=2</a></p>';
+        const normalized = normalizeHtmlPunctuation(html);
+        const doc = new DOMParser().parseFromString(normalized, 'text/html');
+
+        expect(doc.querySelector('p')?.textContent).toBe('1. 你好， “世界” （A／B）。');
+        expect(doc.querySelector('code')?.textContent).toBe('const a = 1 + 2;');
+        expect(doc.querySelector('a')?.textContent).toBe('https://example.com?a=1&b=2');
     });
 });
 
