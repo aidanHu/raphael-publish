@@ -1,4 +1,4 @@
-import { Copy, CheckCircle2, Download, Smartphone, Tablet, Monitor, Loader2, Link2, Unlink2, Wand2 } from 'lucide-react';
+import { Copy, CheckCircle2, Download, Smartphone, Tablet, Monitor, Loader2, Link2, Unlink2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface ToolbarProps {
@@ -13,6 +13,10 @@ interface ToolbarProps {
     onToggleScrollSync: () => void;
     convertPunctuation: boolean;
     onToggleConvertPunctuation: () => void;
+    useCornerQuotes: boolean;
+    onToggleCornerQuotes: () => void;
+    normalizeEllipsisDashes: boolean;
+    onToggleNormalizeEllipsisDashes: () => void;
 }
 
 export default function Toolbar({
@@ -26,7 +30,11 @@ export default function Toolbar({
     scrollSyncEnabled,
     onToggleScrollSync,
     convertPunctuation,
-    onToggleConvertPunctuation
+    onToggleConvertPunctuation,
+    useCornerQuotes,
+    onToggleCornerQuotes,
+    normalizeEllipsisDashes,
+    onToggleNormalizeEllipsisDashes
 }: ToolbarProps) {
     return (
         <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5 max-w-[1024px]">
@@ -57,32 +65,34 @@ export default function Toolbar({
                 </button>
             </div>
 
-            <div className="flex items-center justify-end gap-2 sm:gap-2.5">
-                <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                    data-testid="punctuation-toggle"
-                    onClick={onToggleConvertPunctuation}
-                    className={`toolbar-toggle-option ${convertPunctuation ? 'toolbar-toggle-option-active' : ''}`}
-                    title={convertPunctuation ? '关闭符号转中文与分割线清理' : '开启符号转中文与分割线清理'}
-                >
-                    <Wand2 size={15} className="shrink-0" />
-                    <div className="min-w-0 text-left">
-                        <div className="text-[13px] font-semibold leading-none">
-                            <span className="hidden sm:inline">文本修整</span>
-                            <span className="sm:hidden">修整</span>
-                        </div>
-                        <div className="mt-1 hidden text-[11px] leading-none text-[#6e6e73] dark:text-[#a1a1a6] md:block">
-                            符号转中文
-                        </div>
-                    </div>
-                    <span
-                        aria-hidden="true"
-                        className={`toolbar-switch toolbar-switch-compact ${convertPunctuation ? 'toolbar-switch-on' : ''}`}
-                    >
-                        <span className="toolbar-switch-knob" />
-                    </span>
-                </motion.button>
+            <div className="flex items-center justify-end gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-2 sm:gap-2.5 min-w-max">
+                    <ToggleOption
+                        testId="punctuation-toggle"
+                        badge="A→中"
+                        label="符号转中文"
+                        active={convertPunctuation}
+                        onClick={onToggleConvertPunctuation}
+                        title={convertPunctuation ? '关闭符号转中文与分割线清理' : '开启符号转中文与分割线清理'}
+                    />
+                    <ToggleOption
+                        testId="corner-quotes-toggle"
+                        badge="「」"
+                        label="直角引号"
+                        active={useCornerQuotes}
+                        onClick={onToggleCornerQuotes}
+                        disabled={!convertPunctuation}
+                        title={convertPunctuation ? (useCornerQuotes ? '关闭直角引号' : '开启直角引号') : '请先开启符号转中文'}
+                    />
+                    <ToggleOption
+                        testId="ellipsis-dash-toggle"
+                        badge="……"
+                        label="省略号/破折号"
+                        active={normalizeEllipsisDashes}
+                        onClick={onToggleNormalizeEllipsisDashes}
+                        title={normalizeEllipsisDashes ? '关闭省略号和破折号规范化' : '开启省略号和破折号规范化'}
+                    />
+                </div>
 
                 <motion.button
                     whileHover={{ scale: 1.02 }}
@@ -133,5 +143,33 @@ export default function Toolbar({
                 </motion.button>
             </div>
         </div>
+    );
+}
+
+interface ToggleOptionProps {
+    active: boolean;
+    badge: string;
+    disabled?: boolean;
+    label: string;
+    onClick: () => void;
+    testId: string;
+    title: string;
+}
+
+function ToggleOption({ active, badge, disabled = false, label, onClick, testId, title }: ToggleOptionProps) {
+    return (
+        <motion.button
+            whileHover={disabled ? undefined : { scale: 1.02 }}
+            whileTap={disabled ? undefined : { scale: 0.97 }}
+            data-testid={testId}
+            disabled={disabled}
+            onClick={onClick}
+            className={`toolbar-chip-btn ${active ? 'toolbar-chip-btn-active' : ''} ${disabled ? 'toolbar-chip-btn-disabled' : ''}`}
+            title={title}
+        >
+            <span className={`toolbar-chip-badge ${active ? 'toolbar-chip-badge-active' : ''}`}>{badge}</span>
+            <span className="hidden sm:inline">{label}</span>
+            <span className="sm:hidden">{badge === 'A→中' ? '符号' : badge === '「」' ? '引号' : '省略号'}</span>
+        </motion.button>
     );
 }

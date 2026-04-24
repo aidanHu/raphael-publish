@@ -80,18 +80,17 @@ function shouldSkipPunctuationConversion(text: string, index: number, char: stri
     return false;
 }
 
-export function convertEnglishPunctuationToChinese(text: string) {
-    let normalized = text.replace(/\.{3,}/g, '……');
+function convertQuoteMarks(text: string, style: 'curly' | 'corner') {
     let result = '';
     let doubleQuoteOpen = false;
     let singleQuoteOpen = false;
 
-    for (let index = 0; index < normalized.length; index += 1) {
-        const char = normalized[index];
+    for (let index = 0; index < text.length; index += 1) {
+        const char = text[index];
 
         if (char === '"' || char === "'") {
-            const prev = normalized[index - 1] || '';
-            const next = normalized[index + 1] || '';
+            const prev = text[index - 1] || '';
+            const next = text[index + 1] || '';
 
             if (char === "'" && isAsciiLetterOrDigit(prev) && isAsciiLetterOrDigit(next)) {
                 result += "'";
@@ -99,19 +98,38 @@ export function convertEnglishPunctuationToChinese(text: string) {
             }
 
             if (char === '"') {
-                result += doubleQuoteOpen ? '”' : '“';
+                if (style === 'corner') {
+                    result += doubleQuoteOpen ? '」' : '「';
+                } else {
+                    result += doubleQuoteOpen ? '”' : '“';
+                }
                 doubleQuoteOpen = !doubleQuoteOpen;
                 continue;
             }
 
-            result += singleQuoteOpen ? '’' : '‘';
+            if (style === 'corner') {
+                result += singleQuoteOpen ? '』' : '『';
+            } else {
+                result += singleQuoteOpen ? '’' : '‘';
+            }
             singleQuoteOpen = !singleQuoteOpen;
             continue;
         }
 
+        result += char;
+    }
+
+    return result;
+}
+
+function convertBasicPunctuationToChinese(text: string) {
+    let result = '';
+
+    for (let index = 0; index < text.length; index += 1) {
+        const char = text[index];
         const mapped = PUNCTUATION_MAP[char];
 
-        if (!mapped || shouldSkipPunctuationConversion(normalized, index, char)) {
+        if (!mapped || shouldSkipPunctuationConversion(text, index, char)) {
             result += char;
             continue;
         }
@@ -120,6 +138,18 @@ export function convertEnglishPunctuationToChinese(text: string) {
     }
 
     return result;
+}
+
+export function convertEnglishPunctuationToChinese(text: string) {
+    return convertQuoteMarks(convertBasicPunctuationToChinese(text.replace(/\.{3,}/g, '……')), 'curly');
+}
+
+export function normalizeEllipsisAndDashes(text: string) {
+    return text
+        .replace(/\.{3,}|。{3,}/g, '……')
+        .replace(/—{3,}/g, '——')
+        .replace(/(?<!—)—(?!—)/g, '——')
+        .replace(/-{2,}/g, '——');
 }
 
 function protectMarkdownSegments(text: string) {
@@ -146,11 +176,48 @@ function protectMarkdownSegments(text: string) {
     return { protectedSegments, work };
 }
 
-export function normalizeMarkdownForPreview(text: string) {
-    const { protectedSegments, work: protectedText } = protectMarkdownSegments(text);
+function protectMarkdownSeparators(text: string) {
+    const separators: string[] = [];
+    const work = text.replace(/^[ \t]{0,3}(?:-\s*){3,}[ \t]*(?:\r?\n)?/gm, (match) => {
+        const index = separators.push(match) - 1;
+        return `\u0000MDSEPARATOR${index}\u0000`;
+    });
 
-    const withoutDashLines = protectedText.replace(/^[ \t]{0,3}(?:-\s*){3,}[ \t]*(?:\r?\n)?/gm, '');
-    const normalized = convertEnglishPunctuationToChinese(withoutDashLines);
+    return { separators, work };
+}
+
+export interface MarkdownNormalizationOptions {
+    convertPunctuation?: boolean;
+    useCornerQuotes?: boolean;
+    normalizeEllipsisDashes?: boolean;
+}
+
+export function normalizeMarkdownForPreview(text: string, options: MarkdownNormalizationOptions = {}) {
+    const {
+        convertPunctuation = false,
+        useCornerQuotes = false,
+        normalizeEllipsisDashes = false
+    } = options;
+
+    const { separators, work: withProtectedSeparators } = protectMarkdownSeparators(text);
+    const { protectedSegments, work: protectedText } = protectMarkdownSegments(withProtectedSeparators);
+    let normalized = protectedText;
+
+    if (convertPunctuation) {
+        normalized = normalized.replace(/\u0000MDSEPARATOR(\d+)\u0000/g, '');
+        normalized = convertBasicPunctuationToChinese(normalized);
+        normalized = convertQuoteMarks(normalized, useCornerQuotes ? 'corner' : 'curly');
+    }
+
+    if (normalizeEllipsisDashes) {
+        normalized = normalizeEllipsisAndDashes(normalized);
+    }
+
+    if (!convertPunctuation) {
+        normalized = normalized.replace(/\u0000MDSEPARATOR(\d+)\u0000/g, (_match, index) => {
+            return separators[Number(index)] ?? '';
+        });
+    }
 
     return normalized.replace(/\u0000MDPROTECT(\d+)\u0000/g, (_match, index) => {
         return protectedSegments[Number(index)] ?? '';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyTheme, convertEnglishPunctuationToChinese, md, normalizeHtmlPunctuation, normalizeMarkdownForPreview, preprocessMarkdown } from './markdown';
+import { applyTheme, convertEnglishPunctuationToChinese, md, normalizeEllipsisAndDashes, normalizeHtmlPunctuation, normalizeMarkdownForPreview, preprocessMarkdown } from './markdown';
 
 function renderMarkdown(markdown: string) {
     return md.render(preprocessMarkdown(markdown));
@@ -57,7 +57,9 @@ describe('normalizeHtmlPunctuation', () => {
 
 describe('normalizeMarkdownForPreview', () => {
     it('converts prose punctuation and removes thematic breaks before rendering', () => {
-        const normalized = normalizeMarkdownForPreview('Hello, world!\n\n---\n\nNext line.');
+        const normalized = normalizeMarkdownForPreview('Hello, world!\n\n---\n\nNext line.', {
+            convertPunctuation: true
+        });
 
         expect(normalized).toBe('Hello， world！\n\nNext line。');
     });
@@ -75,7 +77,9 @@ describe('normalizeMarkdownForPreview', () => {
             '```ts',
             'const url = "https://example.com/a/b";',
             '```'
-        ].join('\n'));
+        ].join('\n'), {
+            convertPunctuation: true
+        });
 
         expect(normalized).toContain('1. First item， keep going。');
         expect(normalized).toContain('https://example.com/a/b?x=1&y=2');
@@ -85,9 +89,42 @@ describe('normalizeMarkdownForPreview', () => {
     });
 
     it('removes spaced markdown separators too', () => {
-        const normalized = normalizeMarkdownForPreview('alpha\n\n- - -\n\nbeta');
+        const normalized = normalizeMarkdownForPreview('alpha\n\n- - -\n\nbeta', {
+            convertPunctuation: true
+        });
 
         expect(normalized).toBe('alpha\n\nbeta');
+    });
+
+    it('uses corner quotes when enabled with punctuation conversion', () => {
+        const normalized = normalizeMarkdownForPreview('"Hello", \'world\'', {
+            convertPunctuation: true,
+            useCornerQuotes: true
+        });
+
+        expect(normalized).toBe('「Hello」， 『world』');
+    });
+
+    it('normalizes ellipsis and dashes independently from punctuation conversion', () => {
+        const normalized = normalizeMarkdownForPreview('Wait... really -- yes — okay', {
+            normalizeEllipsisDashes: true
+        });
+
+        expect(normalized).toBe('Wait…… really —— yes —— okay');
+    });
+
+    it('keeps markdown separators when only ellipsis and dashes are enabled', () => {
+        const normalized = normalizeMarkdownForPreview('alpha\n\n---\n\nbeta', {
+            normalizeEllipsisDashes: true
+        });
+
+        expect(normalized).toBe('alpha\n\n---\n\nbeta');
+    });
+});
+
+describe('normalizeEllipsisAndDashes', () => {
+    it('normalizes repeated dots and dash variants', () => {
+        expect(normalizeEllipsisAndDashes('Wait... -- —')).toBe('Wait…… —— ——');
     });
 });
 

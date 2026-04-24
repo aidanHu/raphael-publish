@@ -25,6 +25,8 @@ export default function App() {
     const [activePanel, setActivePanel] = useState<'editor' | 'preview'>('editor');
     const [scrollSyncEnabled, setScrollSyncEnabled] = useState(true);
     const [convertPunctuation, setConvertPunctuation] = useState(false);
+    const [useCornerQuotes, setUseCornerQuotes] = useState(false);
+    const [normalizeEllipsisDashes, setNormalizeEllipsisDashes] = useState(false);
     const previewRef = useRef<HTMLDivElement>(null);
     const editorScrollRef = useRef<HTMLTextAreaElement>(null);
     const previewOuterScrollRef = useRef<HTMLDivElement>(null);
@@ -48,7 +50,11 @@ export default function App() {
     useEffect(() => {
         // Core rendering: markdown → HTML → styled HTML
         const preprocessedMarkdown = preprocessMarkdown(markdownInput);
-        const normalizedMarkdown = convertPunctuation ? normalizeMarkdownForPreview(preprocessedMarkdown) : preprocessedMarkdown;
+        const normalizedMarkdown = normalizeMarkdownForPreview(preprocessedMarkdown, {
+            convertPunctuation,
+            useCornerQuotes,
+            normalizeEllipsisDashes
+        });
         const rawHtml = md.render(normalizedMarkdown);
         const styledHtml = applyTheme(rawHtml, activeTheme);
 
@@ -57,7 +63,7 @@ export default function App() {
         const indexedHtml = markElementIndexes(styledHtml);
 
         setRenderedHtml(indexedHtml);
-    }, [markdownInput, activeTheme, convertPunctuation]);
+    }, [markdownInput, activeTheme, convertPunctuation, useCornerQuotes, normalizeEllipsisDashes]);
 
     useEffect(() => {
         if (!scrollSyncEnabled) {
@@ -280,21 +286,29 @@ export default function App() {
             </div>
 
             {/* 排版设置 & 工具栏 (桌面端) */}
-            <div className={`glass-toolbar hidden md:grid grid-cols-1 ${gridLayoutClass()} px-0 z-[90] transition-all duration-500`}>
-                <ThemeSelector activeTheme={activeTheme} onThemeChange={setActiveTheme} />
-                <Toolbar
-                    previewDevice={previewDevice}
-                    onDeviceChange={setPreviewDevice}
-                    onExportPdf={handleExportPdf}
-                    onExportHtml={handleExportHtml}
-                    onCopy={handleCopy}
-                    copied={copied}
-                    isCopying={isCopying}
-                    scrollSyncEnabled={scrollSyncEnabled}
-                    onToggleScrollSync={() => setScrollSyncEnabled((prev) => !prev)}
-                    convertPunctuation={convertPunctuation}
-                    onToggleConvertPunctuation={() => setConvertPunctuation((prev) => !prev)}
-                />
+            <div className="glass-toolbar hidden md:grid md:grid-cols-[minmax(0,1fr)_auto] px-0 z-[90]">
+                <div className="min-w-0">
+                    <ThemeSelector activeTheme={activeTheme} onThemeChange={setActiveTheme} />
+                </div>
+                <div className="border-l border-[#00000010] dark:border-[#ffffff10]">
+                    <Toolbar
+                        previewDevice={previewDevice}
+                        onDeviceChange={setPreviewDevice}
+                        onExportPdf={handleExportPdf}
+                        onExportHtml={handleExportHtml}
+                        onCopy={handleCopy}
+                        copied={copied}
+                        isCopying={isCopying}
+                        scrollSyncEnabled={scrollSyncEnabled}
+                        onToggleScrollSync={() => setScrollSyncEnabled((prev) => !prev)}
+                        convertPunctuation={convertPunctuation}
+                        onToggleConvertPunctuation={() => setConvertPunctuation((prev) => !prev)}
+                        useCornerQuotes={useCornerQuotes}
+                        onToggleCornerQuotes={() => setUseCornerQuotes((prev) => !prev)}
+                        normalizeEllipsisDashes={normalizeEllipsisDashes}
+                        onToggleNormalizeEllipsisDashes={() => setNormalizeEllipsisDashes((prev) => !prev)}
+                    />
+                </div>
             </div>
 
             {/* 移动端工具栏：分两行避免按钮被主题栏挤出可视区 */}
@@ -314,6 +328,10 @@ export default function App() {
                     onToggleScrollSync={() => setScrollSyncEnabled((prev) => !prev)}
                     convertPunctuation={convertPunctuation}
                     onToggleConvertPunctuation={() => setConvertPunctuation((prev) => !prev)}
+                    useCornerQuotes={useCornerQuotes}
+                    onToggleCornerQuotes={() => setUseCornerQuotes((prev) => !prev)}
+                    normalizeEllipsisDashes={normalizeEllipsisDashes}
+                    onToggleNormalizeEllipsisDashes={() => setNormalizeEllipsisDashes((prev) => !prev)}
                 />
             </div>
 
