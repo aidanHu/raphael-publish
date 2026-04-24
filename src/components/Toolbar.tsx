@@ -38,8 +38,8 @@ export default function Toolbar({
 }: ToolbarProps) {
     return (
         <div className="px-4 sm:px-6 py-2.5 md:px-6 md:py-3">
-            <div className="hidden md:flex md:flex-col md:gap-2.5">
-                <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-2.5">
+                <div className="flex items-center justify-end gap-3 md:justify-between">
                     <DeviceSelector previewDevice={previewDevice} onDeviceChange={onDeviceChange} />
                     <div className="flex items-center justify-end gap-2 sm:gap-2.5">
                         <ExportActions
@@ -52,7 +52,7 @@ export default function Toolbar({
                     </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 md:justify-end">
                     <ToggleOption
                         testId="punctuation-toggle"
                         badge="A→中"
@@ -91,58 +91,6 @@ export default function Toolbar({
                     </motion.button>
                 </div>
             </div>
-
-            <div className="flex items-center justify-between gap-3 overflow-x-auto no-scrollbar md:hidden">
-                <div className="flex items-center gap-2 sm:gap-2.5 min-w-max">
-                    <ToggleOption
-                        testId="punctuation-toggle"
-                        badge="A→中"
-                        label="符号转中文"
-                        active={convertPunctuation}
-                        onClick={onToggleConvertPunctuation}
-                        title={convertPunctuation ? '关闭符号转中文与分割线清理' : '开启符号转中文与分割线清理'}
-                    />
-                    <ToggleOption
-                        testId="corner-quotes-toggle"
-                        badge="「」"
-                        label="直角引号"
-                        active={useCornerQuotes}
-                        onClick={onToggleCornerQuotes}
-                        disabled={!convertPunctuation}
-                        title={convertPunctuation ? (useCornerQuotes ? '关闭直角引号' : '开启直角引号') : '请先开启符号转中文'}
-                    />
-                    <ToggleOption
-                        testId="ellipsis-dash-toggle"
-                        badge="……"
-                        label="省略号/破折号"
-                        active={normalizeEllipsisDashes}
-                        onClick={onToggleNormalizeEllipsisDashes}
-                        title={normalizeEllipsisDashes ? '关闭省略号和破折号规范化' : '开启省略号和破折号规范化'}
-                    />
-                    <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.96 }}
-                        data-testid="scroll-sync-toggle"
-                        onClick={onToggleScrollSync}
-                        className={`toolbar-chip-btn ${scrollSyncEnabled ? 'toolbar-chip-btn-active' : ''}`}
-                        title={scrollSyncEnabled ? '关闭滚动同步' : '开启滚动同步'}
-                    >
-                        {scrollSyncEnabled ? <Link2 size={14} /> : <Unlink2 size={14} />}
-                        <span className="hidden sm:inline">{scrollSyncEnabled ? '滚动同步' : '同步关闭'}</span>
-                        <span className="sm:hidden">{scrollSyncEnabled ? '同步' : '关闭'}</span>
-                    </motion.button>
-                </div>
-
-                <div className="flex items-center gap-2 sm:gap-2.5 min-w-max">
-                    <ExportActions
-                        copied={copied}
-                        isCopying={isCopying}
-                        onCopy={onCopy}
-                        onExportHtml={onExportHtml}
-                        onExportPdf={onExportPdf}
-                    />
-                </div>
-            </div>
         </div>
     );
 }
@@ -154,7 +102,7 @@ interface DeviceSelectorProps {
 
 function DeviceSelector({ previewDevice, onDeviceChange }: DeviceSelectorProps) {
     return (
-        <div className="flex bg-[#00000006] dark:bg-[#ffffff08] p-1 rounded-full backdrop-blur-md">
+        <div className="hidden md:flex bg-[#00000006] dark:bg-[#ffffff08] p-1 rounded-full backdrop-blur-md">
             <button
                 data-testid="device-mobile"
                 onClick={() => onDeviceChange('mobile')}
