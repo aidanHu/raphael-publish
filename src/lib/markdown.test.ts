@@ -105,6 +105,14 @@ describe('normalizeMarkdownForPreview', () => {
         expect(normalized).toBe('「Hello」， 『world』');
     });
 
+    it('uses corner quotes independently when punctuation conversion is disabled', () => {
+        const normalized = normalizeMarkdownForPreview('"Hello", \'world\'.', {
+            useCornerQuotes: true
+        });
+
+        expect(normalized).toBe('「Hello」, 『world』.');
+    });
+
     it('normalizes ellipsis and dashes independently from punctuation conversion', () => {
         const normalized = normalizeMarkdownForPreview('Wait... really -- yes — okay', {
             normalizeEllipsisDashes: true

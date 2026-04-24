@@ -206,7 +206,12 @@ export function normalizeMarkdownForPreview(text: string, options: MarkdownNorma
     if (convertPunctuation) {
         normalized = normalized.replace(/\u0000MDSEPARATOR(\d+)\u0000/g, '');
         normalized = convertBasicPunctuationToChinese(normalized);
-        normalized = convertQuoteMarks(normalized, useCornerQuotes ? 'corner' : 'curly');
+    }
+
+    if (useCornerQuotes) {
+        normalized = convertQuoteMarks(normalized, 'corner');
+    } else if (convertPunctuation) {
+        normalized = convertQuoteMarks(normalized, 'curly');
     }
 
     if (normalizeEllipsisDashes) {

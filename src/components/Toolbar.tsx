@@ -67,8 +67,7 @@ export default function Toolbar({
                         label="直角引号"
                         active={useCornerQuotes}
                         onClick={onToggleCornerQuotes}
-                        disabled={!convertPunctuation}
-                        title={convertPunctuation ? (useCornerQuotes ? '关闭直角引号' : '开启直角引号') : '请先开启符号转中文'}
+                        title={useCornerQuotes ? '关闭直角引号' : '开启直角引号'}
                     />
                     <ToggleOption
                         testId="ellipsis-dash-toggle"
