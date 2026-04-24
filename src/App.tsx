@@ -253,12 +253,7 @@ export default function App() {
         if (previewDevice === 'tablet') return 'w-[800px] max-w-full';
         return 'w-[840px] xl:w-[1024px] max-w-[95%]';
     };
-
-    const gridLayoutClass = () => {
-        if (previewDevice === 'mobile') return 'md:grid-cols-[55fr_45fr]';
-        if (previewDevice === 'tablet') return 'md:grid-cols-[45fr_55fr]';
-        return 'md:grid-cols-[38.2fr_61.8fr]';
-    };
+    const desktopLayoutClass = 'md:grid-cols-[45fr_55fr]';
 
     return (
         <div className="flex flex-col h-screen overflow-hidden antialiased bg-[#fbfbfd] dark:bg-black transition-colors duration-300">
@@ -286,7 +281,7 @@ export default function App() {
             </div>
 
             {/* 排版设置 & 工具栏 (桌面端) */}
-            <div className="glass-toolbar hidden md:grid md:grid-cols-[minmax(0,1fr)_auto] px-0 z-[90]">
+            <div className={`glass-toolbar hidden md:grid ${desktopLayoutClass} px-0 z-[90]`}>
                 <div className="min-w-0">
                     <ThemeSelector activeTheme={activeTheme} onThemeChange={setActiveTheme} />
                 </div>
@@ -336,7 +331,7 @@ export default function App() {
             </div>
 
             {/* 编辑区 & 预览区 */}
-            <main className={`flex-1 overflow-hidden grid grid-cols-1 ${gridLayoutClass()} relative transition-all duration-500`}>
+            <main className={`flex-1 overflow-hidden grid grid-cols-1 ${desktopLayoutClass} relative`}>
                 <div className={`${activePanel === 'editor' ? 'flex' : 'hidden'} md:flex flex-col overflow-hidden`}>
                     <EditorPanel
                         markdownInput={markdownInput}
