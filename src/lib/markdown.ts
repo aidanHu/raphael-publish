@@ -122,6 +122,41 @@ export function convertEnglishPunctuationToChinese(text: string) {
     return result;
 }
 
+function protectMarkdownSegments(text: string) {
+    const protectedSegments: string[] = [];
+    const storeProtectedSegment = (segment: string) => {
+        const index = protectedSegments.push(segment) - 1;
+        return `\u0000MDPROTECT${index}\u0000`;
+    };
+
+    let work = text.replace(
+        /(^|[\r\n])(```|~~~)[^\r\n]*[\r\n][\s\S]*?[\r\n]\2[^\r\n]*(?=[\r\n]|$)/g,
+        (match, prefix: string) => {
+            const segment = prefix ? match.slice(prefix.length) : match;
+            return `${prefix}${storeProtectedSegment(segment)}`;
+        }
+    );
+
+    work = work.replace(/`[^`\r\n]+`/g, (match) => storeProtectedSegment(match));
+    work = work.replace(/!\[[^\]]*]\([^)]+\)/g, (match) => storeProtectedSegment(match));
+    work = work.replace(/\[[^\]]+]\([^)]+\)/g, (match) => storeProtectedSegment(match));
+    work = work.replace(/<https?:\/\/[^>\s]+>/g, (match) => storeProtectedSegment(match));
+    work = work.replace(/https?:\/\/[^\s]+/g, (match) => storeProtectedSegment(match));
+
+    return { protectedSegments, work };
+}
+
+export function normalizeMarkdownForPreview(text: string) {
+    const { protectedSegments, work: protectedText } = protectMarkdownSegments(text);
+
+    const withoutDashLines = protectedText.replace(/^[ \t]{0,3}(?:-\s*){3,}[ \t]*(?:\r?\n)?/gm, '');
+    const normalized = convertEnglishPunctuationToChinese(withoutDashLines);
+
+    return normalized.replace(/\u0000MDPROTECT(\d+)\u0000/g, (_match, index) => {
+        return protectedSegments[Number(index)] ?? '';
+    });
+}
+
 export function normalizeHtmlPunctuation(html: string) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyTheme, convertEnglishPunctuationToChinese, md, normalizeHtmlPunctuation, preprocessMarkdown } from './markdown';
+import { applyTheme, convertEnglishPunctuationToChinese, md, normalizeHtmlPunctuation, normalizeMarkdownForPreview, preprocessMarkdown } from './markdown';
 
 function renderMarkdown(markdown: string) {
     return md.render(preprocessMarkdown(markdown));
@@ -52,6 +52,42 @@ describe('normalizeHtmlPunctuation', () => {
         expect(doc.querySelector('p')?.textContent).toBe('1. 你好， “世界” （A／B）。');
         expect(doc.querySelector('code')?.textContent).toBe('const a = 1 + 2;');
         expect(doc.querySelector('a')?.textContent).toBe('https://example.com?a=1&b=2');
+    });
+});
+
+describe('normalizeMarkdownForPreview', () => {
+    it('converts prose punctuation and removes thematic breaks before rendering', () => {
+        const normalized = normalizeMarkdownForPreview('Hello, world!\n\n---\n\nNext line.');
+
+        expect(normalized).toBe('Hello， world！\n\nNext line。');
+    });
+
+    it('preserves code, urls and markdown links while keeping list markers intact', () => {
+        const normalized = normalizeMarkdownForPreview([
+            '1. First item, keep going.',
+            '',
+            'URL: https://example.com/a/b?x=1&y=2',
+            '',
+            '[Link, text](https://example.com/a/b)',
+            '',
+            '`const ratio = 3.14;`',
+            '',
+            '```ts',
+            'const url = "https://example.com/a/b";',
+            '```'
+        ].join('\n'));
+
+        expect(normalized).toContain('1. First item， keep going。');
+        expect(normalized).toContain('https://example.com/a/b?x=1&y=2');
+        expect(normalized).toContain('[Link, text](https://example.com/a/b)');
+        expect(normalized).toContain('`const ratio = 3.14;`');
+        expect(normalized).toContain('const url = "https://example.com/a/b";');
+    });
+
+    it('removes spaced markdown separators too', () => {
+        const normalized = normalizeMarkdownForPreview('alpha\n\n- - -\n\nbeta');
+
+        expect(normalized).toBe('alpha\n\nbeta');
     });
 });
 

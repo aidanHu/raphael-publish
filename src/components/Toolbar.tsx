@@ -64,7 +64,7 @@ export default function Toolbar({
                     data-testid="punctuation-toggle"
                     onClick={onToggleConvertPunctuation}
                     className={`apple-export-btn !bg-[#00000008] dark:!bg-[#ffffff10] border-transparent ${convertPunctuation ? 'text-[#0066cc] dark:text-[#0a84ff]' : 'text-[#86868b] dark:text-[#a1a1a6]'}`}
-                    title={convertPunctuation ? '关闭英文符号转中文' : '开启英文符号转中文'}
+                    title={convertPunctuation ? '关闭符号转中文与分割线清理' : '开启符号转中文与分割线清理'}
                 >
                     <span className="font-mono text-[12px] leading-none">A→中</span>
                     <span className="hidden sm:inline">{convertPunctuation ? '符号转中文开' : '符号转中文关'}</span>
