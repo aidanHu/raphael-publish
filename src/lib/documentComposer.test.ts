@@ -35,6 +35,7 @@ describe('composeDocumentHtml', () => {
         expect(doc.body.textContent).not.toContain('北欧专栏');
         expect(doc.querySelector('[data-md-type="paragraph"]')?.textContent).toBe('正文');
         expect(html).toContain('color:#d71a1b');
+        expect(html).toContain(`这是第<span style="color:#d71a1b; font-weight:700;">1</span>篇文章`);
         expect(html).toContain('<strong style="color:#d71a1b; font-weight:700;">关注</strong>');
     });
 

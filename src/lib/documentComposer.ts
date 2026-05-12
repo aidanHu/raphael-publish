@@ -115,20 +115,27 @@ function renderInlineAccentText(text: string, palette: ThemePalette) {
     return safeText.replace(/\*\*([^*]+)\*\*/g, `<strong style="color:${palette.accent}; font-weight:700;">$1</strong>`);
 }
 
-function formatIssueLabel(profile: AccountProfile) {
-    return `${profile.issuePrefix}${profile.issueNumber}${profile.issueSuffix}`.trim();
+function renderIssueLabel(profile: AccountProfile, strongStyle: string) {
+    const prefix = escapeHtml(profile.issuePrefix);
+    const number = escapeHtml(profile.issueNumber);
+    const suffix = escapeHtml(profile.issueSuffix);
+    const issueText = `${profile.issuePrefix}${profile.issueNumber}${profile.issueSuffix}`.trim();
+
+    if (!issueText) return '';
+
+    return `${prefix}<span style="${strongStyle}">${number}</span>${suffix}`;
 }
 
 function renderMetaRows(profile: AccountProfile, metrics: DocumentMetrics, palette: ThemePalette, alignment: AlignmentStyles) {
     const metaStyle = `margin:0; line-height:1.7; color:${palette.muted}; font-size:13px; text-align:${alignment.textAlign};`;
     const strongStyle = `color:${palette.accent}; font-weight:700;`;
-    const issueLabel = formatIssueLabel(profile);
+    const issueLabel = renderIssueLabel(profile, strongStyle);
 
     return [
         `<p style="${metaStyle}">文 | <span style="${strongStyle}">${escapeHtml(profile.authorName)}</span></p>`,
         `<p style="${metaStyle}">图片 | <span style="${strongStyle}">${escapeHtml(profile.imageSource)}</span></p>`,
         `<p style="${metaStyle}">字数 | <span style="${strongStyle}">${metrics.wordCount}</span> · 预计阅读 <span style="${strongStyle}">${metrics.readTimeMinutes}</span> 分钟</p>`,
-        issueLabel ? `<p style="${metaStyle}">${escapeHtml(issueLabel)}</p>` : ''
+        issueLabel ? `<p style="${metaStyle}">${issueLabel}</p>` : ''
     ].join('');
 }
 
