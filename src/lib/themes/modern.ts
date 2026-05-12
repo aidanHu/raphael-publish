@@ -1,6 +1,6 @@
-import type { Theme } from './types';
+import type { ThemeDefinition } from './types';
 
-export const modernThemes: Theme[] = [
+export const modernThemes: ThemeDefinition[] = [
   {
     id: 'notion',
     name: 'Notion',

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -5,6 +6,7 @@ import { THEMES, THEME_GROUPS, type Theme } from '../lib/themes';
 
 interface ThemeSelectorProps {
     activeTheme: string;
+    accessory?: ReactNode;
     onThemeChange: (themeId: string) => void;
 }
 
@@ -32,7 +34,7 @@ function ThemeSwatch({ styles }: { styles: Record<string, string> }) {
     );
 }
 
-export default function ThemeSelector({ activeTheme, onThemeChange }: ThemeSelectorProps) {
+export default function ThemeSelector({ activeTheme, accessory, onThemeChange }: ThemeSelectorProps) {
     const [isThemeOpen, setIsThemeOpen] = useState(false);
     const [showBottomFade, setShowBottomFade] = useState(true);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -75,6 +77,12 @@ export default function ThemeSelector({ activeTheme, onThemeChange }: ThemeSelec
                     </button>
                 ))}
             </div>
+
+            {accessory ? (
+                <div className="shrink-0">
+                    {accessory}
+                </div>
+            ) : null}
 
             <div className="relative shrink-0">
                 <button

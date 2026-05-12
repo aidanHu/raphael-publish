@@ -4,17 +4,21 @@ import html2pdf from 'html2pdf.js';
 import { md, preprocessMarkdown, normalizeMarkdownForPreview, applyTheme } from './lib/markdown';
 import { markElementIndexes } from './lib/markdownIndexer';
 import { makeWeChatCompatible, cleanInternalAttributes } from './lib/wechatCompat';
+import { getDocumentMetrics, composeDocumentHtml } from './lib/documentComposer';
 import { THEMES } from './lib/themes';
+import { createProfile, getNextProfileName, loadProfiles, saveProfiles, type AccountProfile } from './lib/profiles';
 import { defaultContent } from './defaultContent';
 import { findImagePosition, selectTextAreaRange } from './lib/imageSelector';
 import { findElementPosition, type ElementLocation } from './lib/markdownLocator';
 import Header from './components/Header';
+import ProfilePanel from './components/ProfilePanel';
 import ThemeSelector from './components/ThemeSelector';
 import Toolbar from './components/Toolbar';
 import EditorPanel from './components/EditorPanel';
 import PreviewPanel from './components/PreviewPanel';
 
 export default function App() {
+    const [profilesState, setProfilesState] = useState(loadProfiles);
     const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
     const [markdownInput, setMarkdownInput] = useState<string>(defaultContent);
     const [renderedHtml, setRenderedHtml] = useState<string>('');
@@ -33,10 +37,16 @@ export default function App() {
     const previewInnerScrollRef = useRef<HTMLDivElement>(null);
     const scrollSyncLockRef = useRef<'editor' | 'preview' | null>(null);
     const scrollLockReleaseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const { profiles, activeProfileId } = profilesState;
+    const activeProfile = profiles.find((profile) => profile.id === activeProfileId) || profiles[0];
 
     useEffect(() => {
         // Enforce light mode as default, do not follow system preferences
     }, []);
+
+    useEffect(() => {
+        saveProfiles(profilesState);
+    }, [profilesState]);
 
     const toggleTheme = () => {
         setThemeMode((prev) => {
@@ -61,9 +71,11 @@ export default function App() {
         // Enhancement layer: add index markers for click-to-locate
         // This is decoupled from core rendering logic
         const indexedHtml = markElementIndexes(styledHtml);
+        const theme = THEMES.find((item) => item.id === activeTheme) || THEMES[0];
+        const composedHtml = composeDocumentHtml(indexedHtml, theme, activeProfile, getDocumentMetrics(normalizedMarkdown));
 
-        setRenderedHtml(indexedHtml);
-    }, [markdownInput, activeTheme, convertPunctuation, useCornerQuotes, normalizeEllipsisDashes]);
+        setRenderedHtml(composedHtml);
+    }, [markdownInput, activeTheme, convertPunctuation, useCornerQuotes, normalizeEllipsisDashes, activeProfile]);
 
     useEffect(() => {
         if (!scrollSyncEnabled) {
@@ -255,6 +267,49 @@ export default function App() {
     };
     const desktopLayoutClass = 'md:grid-cols-[45fr_55fr]';
 
+    const setActiveProfileId = (profileId: string) => {
+        setProfilesState((prev) => ({
+            ...prev,
+            activeProfileId: profileId
+        }));
+    };
+
+    const handleCreateProfile = () => {
+        setProfilesState((prev) => {
+            const profile = createProfile(getNextProfileName(prev.profiles));
+            return {
+                profiles: [...prev.profiles, profile],
+                activeProfileId: profile.id
+            };
+        });
+    };
+
+    const handleDeleteProfile = () => {
+        setProfilesState((prev) => {
+            if (prev.profiles.length <= 1) return prev;
+
+            const activeIndex = prev.profiles.findIndex((profile) => profile.id === prev.activeProfileId);
+            const nextProfiles = prev.profiles.filter((profile) => profile.id !== prev.activeProfileId);
+            const fallbackIndex = Math.max(0, activeIndex - 1);
+
+            return {
+                profiles: nextProfiles,
+                activeProfileId: nextProfiles[fallbackIndex]?.id || nextProfiles[0].id
+            };
+        });
+    };
+
+    const handleUpdateProfile = (profileId: string, updates: Partial<AccountProfile>) => {
+        setProfilesState((prev) => ({
+            ...prev,
+            profiles: prev.profiles.map((profile) => (
+                profile.id === profileId
+                    ? { ...profile, ...updates }
+                    : profile
+            ))
+        }));
+    };
+
     return (
         <div className="flex flex-col h-screen overflow-hidden antialiased bg-[#fbfbfd] dark:bg-black transition-colors duration-300">
 
@@ -283,7 +338,20 @@ export default function App() {
             {/* 排版设置 & 工具栏 (桌面端) */}
             <div className={`glass-toolbar hidden md:grid ${desktopLayoutClass} px-0 z-[90]`}>
                 <div className="min-w-0">
-                    <ThemeSelector activeTheme={activeTheme} onThemeChange={setActiveTheme} />
+                    <ThemeSelector
+                        activeTheme={activeTheme}
+                        accessory={
+                            <ProfilePanel
+                                profiles={profiles}
+                                activeProfileId={activeProfile.id}
+                                onProfileChange={setActiveProfileId}
+                                onProfileCreate={handleCreateProfile}
+                                onProfileDelete={handleDeleteProfile}
+                                onProfileUpdate={handleUpdateProfile}
+                            />
+                        }
+                        onThemeChange={setActiveTheme}
+                    />
                 </div>
                 <div className="border-l border-[#00000010] dark:border-[#ffffff10]">
                     <Toolbar
@@ -309,7 +377,20 @@ export default function App() {
             {/* 移动端工具栏：分两行避免按钮被主题栏挤出可视区 */}
             <div className="md:hidden glass-toolbar z-[90]">
                 <div className="overflow-x-auto no-scrollbar border-b border-[#00000010] dark:border-[#ffffff10]">
-                    <ThemeSelector activeTheme={activeTheme} onThemeChange={setActiveTheme} />
+                    <ThemeSelector
+                        activeTheme={activeTheme}
+                        accessory={
+                            <ProfilePanel
+                                profiles={profiles}
+                                activeProfileId={activeProfile.id}
+                                onProfileChange={setActiveProfileId}
+                                onProfileCreate={handleCreateProfile}
+                                onProfileDelete={handleDeleteProfile}
+                                onProfileUpdate={handleUpdateProfile}
+                            />
+                        }
+                        onThemeChange={setActiveTheme}
+                    />
                 </div>
                 <Toolbar
                     previewDevice={previewDevice}

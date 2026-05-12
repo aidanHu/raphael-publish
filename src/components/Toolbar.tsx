@@ -39,7 +39,7 @@ export default function Toolbar({
     return (
         <div className="px-4 sm:px-6 py-2.5 md:px-6 md:py-3">
             <div className="flex flex-col gap-2.5">
-                <div className="flex items-center justify-end gap-3 md:justify-between">
+                <div className="flex items-center justify-between gap-3">
                     <DeviceSelector previewDevice={previewDevice} onDeviceChange={onDeviceChange} />
                     <div className="flex items-center justify-end gap-2 sm:gap-2.5">
                         <ExportActions

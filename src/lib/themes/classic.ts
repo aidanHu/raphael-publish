@@ -1,6 +1,6 @@
-import type { Theme } from './types';
+import type { ThemeDefinition } from './types';
 
-export const classicThemes: Theme[] = [
+export const classicThemes: ThemeDefinition[] = [
   {
     id: 'apple',
     name: 'Mac',

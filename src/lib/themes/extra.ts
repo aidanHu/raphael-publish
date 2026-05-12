@@ -1,6 +1,6 @@
-import type { Theme } from './types';
+import type { ThemeDefinition } from './types';
 
-export const extraThemes: Theme[] = [
+export const extraThemes: ThemeDefinition[] = [
   {
     id: 'solarized',
     name: 'Solarized',
